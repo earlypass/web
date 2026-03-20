@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.earlypass.app/sitemap-index.xml

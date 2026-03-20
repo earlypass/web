@@ -1,0 +1,82 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="MCP Server — EarlyPass Docs" activeDoc="mcp">
+  <Fragment slot="head-meta">
+    <meta name="description" content="Connect Claude Desktop, Cursor, or any MCP client to EarlyPass and manage waitlist campaigns with AI.">
+    <link rel="canonical" href="https://www.earlypass.app/docs/mcp">
+  </Fragment>
+
+  <h1>MCP Server</h1>
+  <p class="doc-lead">EarlyPass exposes a hosted <a href="https://modelcontextprotocol.io/" target="_blank" rel="noopener">Model Context Protocol</a> server so AI assistants like Claude and Cursor can manage your waitlist campaigns without you writing a line of code.</p>
+
+  <h2>Endpoint</h2>
+  <pre><code>https://api.earlypass.app/mcp</code></pre>
+  <p>The server uses <strong>MCP Streamable HTTP</strong> transport. No binary to install — it's hosted alongside the rest of the EarlyPass API.</p>
+
+  <h2>Authentication</h2>
+  <p>Two methods are supported:</p>
+
+  <h3>Option A — OAuth 2.1 (recommended for interactive clients)</h3>
+  <p>MCP clients that support <a href="https://datatracker.ietf.org/doc/html/rfc7591" target="_blank" rel="noopener">dynamic client registration (RFC 7591)</a> — including Claude Desktop and MCP Inspector — will discover and complete the OAuth flow automatically using:</p>
+  <pre><code>GET  /.well-known/oauth-authorization-server   ← discovery
+POST /oauth/register                            ← dynamic client registration
+GET  /oauth/authorize                           ← user login (magic link)
+POST /oauth/token                               ← token exchange</code></pre>
+  <p>Just point your MCP client at <code>https://api.earlypass.app/mcp</code> and it handles the rest.</p>
+
+  <h3>Option B — Account API key (non-interactive / CI)</h3>
+  <p>Generate an account API key in the dashboard under <strong>Settings → API Keys</strong>. Keys have the prefix <code>ep_acc_</code>.</p>
+  <p>Pass it as a Bearer token in the MCP client config:</p>
+  <pre><code>Authorization: Bearer ep_acc_your_key_here</code></pre>
+
+  <h2>Claude Desktop setup</h2>
+  <p>Add this block to your Claude Desktop config file:</p>
+  <ul>
+    <li><strong>macOS:</strong> <code>~/Library/Application Support/Claude/claude_desktop_config.json</code></li>
+    <li><strong>Windows:</strong> <code>%APPDATA%\Claude\claude_desktop_config.json</code></li>
+  </ul>
+  <pre><code set:html={`{\n  "mcpServers": {\n    "earlypass": {\n      "type": "http",\n      "url": "https://api.earlypass.app/mcp",\n      "headers": {\n        "Authorization": "Bearer ep_acc_your_key_here"\n      }\n    }\n  }\n}`}></code></pre>
+  <p>Restart Claude Desktop after saving. You should see EarlyPass tools appear in the tool picker.</p>
+
+  <h2>Cursor setup</h2>
+  <p>Add to <code>.cursor/mcp.json</code> in your project (or <code>~/.cursor/mcp.json</code> for global):</p>
+  <pre><code set:html={`{\n  "mcpServers": {\n    "earlypass": {\n      "type": "http",\n      "url": "https://api.earlypass.app/mcp",\n      "headers": {\n        "Authorization": "Bearer ep_acc_your_key_here"\n      }\n    }\n  }\n}`}></code></pre>
+
+  <h2>Available tools</h2>
+  <table>
+    <thead>
+      <tr><th>Tool</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>list_campaigns</code></td><td>List all campaigns for the authenticated account</td></tr>
+      <tr><td><code>create_campaign</code></td><td>Create a new waitlist campaign</td></tr>
+      <tr><td><code>get_campaign</code></td><td>Get campaign details by ID</td></tr>
+      <tr><td><code>update_campaign</code></td><td>Update campaign name, settings, or status</td></tr>
+      <tr><td><code>get_campaign_stats</code></td><td>Signup counts, referral totals, and daily breakdown</td></tr>
+      <tr><td><code>list_signups</code></td><td>Paginated signup list with optional status filter</td></tr>
+      <tr><td><code>export_signups</code></td><td>Full export as JSON or CSV (up to 10,000 rows)</td></tr>
+      <tr><td><code>invite_signups</code></td><td>Invite the top N verified signups, sends emails</td></tr>
+      <tr><td><code>get_invite_token</code></td><td>Check invite token status (<code>active</code> or <code>redeemed</code>)</td></tr>
+      <tr><td><code>redeem_invite_token</code></td><td>Mark an invite token as redeemed (idempotent)</td></tr>
+      <tr><td><code>manage_webhook</code></td><td>Create, list, or delete webhook endpoints</td></tr>
+      <tr><td><code>get_leaderboard</code></td><td>Top referrers ranked by referral count</td></tr>
+      <tr><td><code>get_widget_embed</code></td><td>Get the <code>&lt;script&gt;</code> embed snippet for a campaign</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Example prompts</h2>
+  <p>Once connected, you can talk to your waitlist naturally:</p>
+  <ul>
+    <li><em>"Create a waitlist campaign called 'Acme App Beta'"</em></li>
+    <li><em>"How many signups does my campaign have? What's the viral coefficient?"</em></li>
+    <li><em>"Give me the widget embed snippet for my campaign."</em></li>
+    <li><em>"Invite the top 50 referrers on the earlypass campaign."</em></li>
+    <li><em>"Export all signups as CSV and show me the top 10."</em></li>
+    <li><em>"Add a webhook to my campaign that calls https://my-app.com/hooks on signup events."</em></li>
+  </ul>
+
+  <h2>Self-hosted MCP</h2>
+  <p>If you self-host EarlyPass, your MCP server is at <code>https://your-domain.com/mcp</code>. Authentication works the same way — account API keys and OAuth both work out of the box.</p>
+</DocsLayout>

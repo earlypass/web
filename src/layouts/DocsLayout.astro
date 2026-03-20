@@ -1,0 +1,30 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  activeDoc: string;
+}
+
+const { title, activeDoc } = Astro.props;
+---
+
+<BaseLayout title={title}>
+  <div class="docs-layout">
+    <nav class="docs-sidebar" aria-label="Docs navigation">
+      <div class="docs-sidebar-title">Documentation</div>
+      <a href="/docs/getting-started" class={activeDoc === 'getting-started' ? 'active' : ''}>Getting Started</a>
+      <a href="/docs/widget" class={activeDoc === 'widget' ? 'active' : ''}>Widget Reference</a>
+      <a href="/docs/mcp" class={activeDoc === 'mcp' ? 'active' : ''}>MCP Server</a>
+      <a href="/docs/api" class={activeDoc === 'api' ? 'active' : ''}>API Reference</a>
+      <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;" />
+      <a href="https://github.com/acroca/earlypass/blob/main/docs/self-hosting.md" target="_blank" rel="noopener">Self-Hosting ↗</a>
+      <a href="https://github.com/acroca/earlypass/blob/main/docs/webhooks.md" target="_blank" rel="noopener">Webhooks ↗</a>
+      <a href="https://github.com/acroca/earlypass/blob/main/docs/referral-mechanics.md" target="_blank" rel="noopener">Referral Mechanics ↗</a>
+    </nav>
+
+    <main class="docs-content">
+      <slot />
+    </main>
+  </div>
+</BaseLayout>

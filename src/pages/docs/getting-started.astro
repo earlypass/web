@@ -1,0 +1,66 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Getting Started — EarlyPass Docs" activeDoc="getting-started">
+  <Fragment slot="head-meta">
+    <meta name="description" content="Get started with EarlyPass in minutes. Create a campaign, embed the widget, and start collecting referral-tracked signups.">
+    <link rel="canonical" href="https://www.earlypass.app/docs/getting-started">
+  </Fragment>
+
+  <h1>Getting Started</h1>
+  <p class="doc-lead">Create a campaign and embed the waitlist widget in under 5 minutes.</p>
+
+  <h2>Step 1 — Create an account</h2>
+  <p>EarlyPass uses magic links — no password required.</p>
+  <ol>
+    <li>Go to <a href="https://api.earlypass.app/dashboard/login">api.earlypass.app/dashboard/login</a></li>
+    <li>Enter your email address and click <strong>Send magic link</strong></li>
+    <li>Click the link in your email — you're in</li>
+  </ol>
+  <div class="callout">
+    <strong>Self-hosting?</strong> Follow the <a href="https://github.com/acroca/earlypass/blob/main/docs/self-hosting.md" target="_blank" rel="noopener">self-hosting guide</a> to run EarlyPass on your own infrastructure, then return here.
+  </div>
+
+  <h2>Step 2 — Create a campaign</h2>
+  <p>A <em>campaign</em> is your waitlist. You can have multiple campaigns per account (e.g. one per product).</p>
+  <ol>
+    <li>In the dashboard, click <strong>New campaign</strong></li>
+    <li>Give it a name and a URL-friendly slug (e.g. <code>my-product</code>)</li>
+    <li>Optionally set a <strong>Product URL</strong> — if set, the widget will only accept signups from that origin (CSRF protection). Leave blank to allow any origin during development.</li>
+    <li>Click <strong>Create</strong></li>
+  </ol>
+  <p>After creation, you'll see your campaign dashboard with a live API key.</p>
+
+  <h2>Step 3 — Embed the widget</h2>
+  <p>Paste this snippet into any HTML page, replacing <code>your-slug</code> with your campaign slug:</p>
+  <pre><code>&lt;script
+  src="https://api.earlypass.app/widget/widget.js"
+  data-campaign="your-slug"
+  async
+&gt;&lt;/script&gt;</code></pre>
+  <p>The widget auto-injects at the location of the <code>&lt;script&gt;</code> tag. It's fully self-contained — no extra CSS imports, no npm package.</p>
+  <p>For customisation options (dark theme, accent colour, custom domain) see the <a href="/docs/widget">Widget Reference</a>.</p>
+
+  <h2>Step 4 — Verify it works</h2>
+  <ol>
+    <li>Open your page in a browser</li>
+    <li>You should see the signup form rendered where you placed the script tag</li>
+    <li>Submit a test email — you'll receive a verification email (or check the dashboard email preview in dev mode)</li>
+    <li>After verifying, the widget shows your referral link and your position on the leaderboard</li>
+  </ol>
+  <p>Return to the dashboard to see the signup appear in real time.</p>
+
+  <h2>Step 5 — Invite your early users</h2>
+  <p>When you're ready to grant access, use the <strong>Invite top N</strong> button in the dashboard. This sends personalised invite emails to your highest referrers first.</p>
+  <p>Each invite includes a unique token your product backend can verify:</p>
+  <pre><code set:html={`GET  /api/v1/invites/{token}\n     → { "status": "active", "email": "user@example.com", ... }\n\nPOST /api/v1/invites/{token}/redeem\n     → marks the token redeemed (idempotent)`}></code></pre>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><a href="/docs/widget">Widget Reference</a> — theming, dark mode, data attributes</li>
+    <li><a href="/docs/api">API Reference</a> — full REST API for programmatic campaign management</li>
+    <li><a href="/docs/mcp">MCP Server</a> — manage campaigns from Claude or Cursor</li>
+    <li><a href="https://github.com/acroca/earlypass/blob/main/docs/webhooks.md" target="_blank" rel="noopener">Webhooks</a> — real-time events for signup.created, referral.converted, signup.invited</li>
+  </ul>
+</DocsLayout>

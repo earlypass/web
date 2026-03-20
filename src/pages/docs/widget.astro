@@ -1,0 +1,102 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Widget Reference — EarlyPass Docs" activeDoc="widget">
+  <Fragment slot="head-meta">
+    <meta name="description" content="EarlyPass widget reference — data attributes, theming, dark mode, and customisation options.">
+    <link rel="canonical" href="https://www.earlypass.app/docs/widget">
+  </Fragment>
+
+  <h1>Widget Reference</h1>
+  <p class="doc-lead">All <code>data-*</code> attributes and theming options for the EarlyPass embeddable widget.</p>
+
+  <h2>Basic embed</h2>
+  <p>Drop the script tag anywhere in your HTML. The widget renders at that location.</p>
+  <pre><code set:html={`&lt;script\n  src="https://api.earlypass.app/widget/widget.js"\n  data-campaign="your-slug"\n  async\n&gt;&lt;/script&gt;`}></code></pre>
+  <p>Or use the custom element directly (useful when you need finer placement control):</p>
+  <pre><code set:html={`&lt;script src="https://api.earlypass.app/widget/widget.js" async&gt;&lt;/script&gt;\n&lt;early-pass data-campaign="your-slug"&gt;&lt;/early-pass&gt;`}></code></pre>
+
+  <h2>Data attributes</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Required</th>
+        <th>Default</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>data-campaign</code></td>
+        <td>Yes</td>
+        <td>—</td>
+        <td>Your campaign slug (found in the dashboard)</td>
+      </tr>
+      <tr>
+        <td><code>data-theme</code></td>
+        <td>No</td>
+        <td><code>light</code></td>
+        <td>Visual theme: <code>light</code> or <code>dark</code></td>
+      </tr>
+      <tr>
+        <td><code>data-accent</code></td>
+        <td>No</td>
+        <td><code>#4f46e5</code></td>
+        <td>Accent colour for buttons and highlights (any CSS colour value)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Theming examples</h2>
+
+  <h3>Dark theme</h3>
+  <pre><code set:html={`&lt;script\n  src="https://api.earlypass.app/widget/widget.js"\n  data-campaign="your-slug"\n  data-theme="dark"\n  async\n&gt;&lt;/script&gt;`}></code></pre>
+
+  <h3>Custom accent colour</h3>
+  <pre><code set:html={`&lt;script\n  src="https://api.earlypass.app/widget/widget.js"\n  data-campaign="your-slug"\n  data-accent="#10b981"\n  async\n&gt;&lt;/script&gt;`}></code></pre>
+
+  <h3>Dark theme with custom accent</h3>
+  <pre><code set:html={`&lt;script\n  src="https://api.earlypass.app/widget/widget.js"\n  data-campaign="your-slug"\n  data-theme="dark"\n  data-accent="#818cf8"\n  async\n&gt;&lt;/script&gt;`}></code></pre>
+
+  <h2>Style isolation</h2>
+  <p>The widget renders inside a <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM" target="_blank" rel="noopener">Shadow DOM</a>. This means:</p>
+  <ul>
+    <li>Your page CSS cannot leak into the widget</li>
+    <li>The widget CSS cannot leak into your page</li>
+    <li>No class name conflicts</li>
+  </ul>
+  <p>The trade-off is that you cannot override widget styles from outside. Use <code>data-accent</code> and <code>data-theme</code> for visual customisation.</p>
+
+  <h2>Widget states</h2>
+  <p>The widget has four states, each rendered automatically:</p>
+  <table>
+    <thead>
+      <tr><th>State</th><th>Shown when</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Form</td><td>Visitor has not yet signed up</td></tr>
+      <tr><td>Verification pending</td><td>Email submitted, waiting for verification click</td></tr>
+      <tr><td>Dashboard</td><td>Email verified — shows position, referral link, and leaderboard</td></tr>
+      <tr><td>Invited</td><td>User has been invited (access granted) via the dashboard</td></tr>
+    </tbody>
+  </table>
+  <p>State is persisted in <code>localStorage</code> so the widget remembers returning visitors.</p>
+
+  <h2>Performance</h2>
+  <ul>
+    <li>Bundle size: &lt; 20 KB gzipped</li>
+    <li>Loads asynchronously — never blocks your page render</li>
+    <li>No external runtime dependencies (vanilla TypeScript, compiled to a single IIFE)</li>
+    <li>Served with immutable cache headers when using the versioned URL (<code>/widget/widget.v&#123;hash&#125;.js</code>)</li>
+  </ul>
+
+  <h2>Self-hosted widget URL</h2>
+  <p>If you're <a href="https://github.com/acroca/earlypass/blob/main/docs/self-hosting.md" target="_blank" rel="noopener">self-hosting EarlyPass</a>, point the <code>src</code> at your own domain:</p>
+  <pre><code set:html={`&lt;script\n  src="https://your-domain.com/widget/widget.js"\n  data-campaign="your-slug"\n  async\n&gt;&lt;/script&gt;`}></code></pre>
+
+  <h2>Domain restriction</h2>
+  <p>If you set a <strong>Product URL</strong> on your campaign (in the dashboard under Settings), the widget API will only accept signups from that origin. Requests from other origins receive a <code>403 Forbidden</code> response.</p>
+  <p>This prevents third parties from embedding your widget on unrelated pages. Leave <strong>Product URL</strong> blank to allow embeds from any origin (useful during development).</p>
+</DocsLayout>

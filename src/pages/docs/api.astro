@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="API Reference — EarlyPass Docs" fullHeight={true}>
+  <Fragment slot="head-meta">
+    <meta name="description" content="Interactive EarlyPass API reference — explore all REST endpoints with Scalar.">
+    <link rel="canonical" href="https://www.earlypass.app/docs/api">
+  </Fragment>
+
+  <div class="scalar-wrap">
+    <script
+      id="api-reference"
+      data-url="https://api.earlypass.app/api/v1/openapi.yaml"
+      data-configuration='{"layout":"sidebar","theme":"default","metaData":{"title":"EarlyPass API Reference"}}'
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+  </div>
+</BaseLayout>
