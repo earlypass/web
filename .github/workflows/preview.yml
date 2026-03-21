@@ -1,0 +1,154 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  screenshot:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Install Playwright
+        run: |
+          npm install --prefix /tmp playwright
+          /tmp/node_modules/.bin/playwright install chromium
+
+      - name: Screenshot landing page
+        run: |
+          npm run preview &
+          timeout 30 bash -c 'until curl -sf http://localhost:4321 > /dev/null; do sleep 1; done'
+          NODE_PATH=/tmp/node_modules node scripts/screenshot.cjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: landing-page-preview
+          path: preview.png
+
+      - name: Publish screenshot and post comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const prNumber = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha.slice(0, 7);
+            const branch = 'pr-previews';
+            const filePath = `pr-${prNumber}/preview.png`;
+            const content = fs.readFileSync('preview.png').toString('base64');
+
+            // Ensure the pr-previews branch exists
+            try {
+              await github.rest.repos.getBranch({ ...context.repo, branch });
+            } catch (e) {
+              if (e.status === 404) {
+                const { data: main } = await github.rest.repos.getBranch({
+                  ...context.repo,
+                  branch: 'main',
+                });
+                await github.rest.git.createRef({
+                  ...context.repo,
+                  ref: `refs/heads/${branch}`,
+                  sha: main.commit.sha,
+                });
+              } else throw e;
+            }
+
+            // Get existing file SHA if present (required by the update API)
+            let existingSha;
+            try {
+              const { data } = await github.rest.repos.getContent({
+                ...context.repo,
+                path: filePath,
+                ref: branch,
+              });
+              existingSha = data.sha;
+            } catch (e) {
+              if (e.status !== 404) throw e;
+            }
+
+            // Upload (create or overwrite) the screenshot
+            await github.rest.repos.createOrUpdateFileContents({
+              ...context.repo,
+              path: filePath,
+              message: `chore: preview screenshot for PR #${prNumber} [skip ci]`,
+              content,
+              branch,
+              ...(existingSha && { sha: existingSha }),
+            });
+
+            const imageUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${branch}/${filePath}`;
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const body = [
+              '## 📸 Landing Page Preview',
+              '',
+              `Built from commit \`${sha}\` — [view run](${runUrl}).`,
+              '',
+              `![Landing page preview](${imageUrl})`,
+            ].join('\n');
+
+            // Create or update the bot comment
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(
+              c => c.user.type === 'Bot' && c.body.includes('Landing Page Preview')
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                ...context.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+  cleanup:
+    if: github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove preview screenshot
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const branch = 'pr-previews';
+            const filePath = `pr-${prNumber}/preview.png`;
+
+            try {
+              const { data } = await github.rest.repos.getContent({
+                ...context.repo,
+                path: filePath,
+                ref: branch,
+              });
+              await github.rest.repos.deleteFile({
+                ...context.repo,
+                path: filePath,
+                message: `chore: remove preview for PR #${prNumber} [skip ci]`,
+                sha: data.sha,
+                branch,
+              });
+            } catch (e) {
+              if (e.status !== 404) core.warning(`Could not remove preview file: ${e.message}`);
+            }
