@@ -46,52 +46,49 @@ jobs:
             const fs = require('fs');
             const prNumber = context.payload.pull_request.number;
             const sha = context.payload.pull_request.head.sha.slice(0, 7);
-            const branch = 'pr-previews';
-            const filePath = `pr-${prNumber}/preview.png`;
-            const content = fs.readFileSync('preview.png').toString('base64');
+            const assetName = `pr-${prNumber}.png`;
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            // Ensure the pr-previews branch exists
+            // Find or create the 'pr-previews' release used as an image store
+            let release;
             try {
-              await github.rest.repos.getBranch({ ...context.repo, branch });
+              ({ data: release } = await github.rest.repos.getReleaseByTag({
+                ...context.repo,
+                tag: 'pr-previews',
+              }));
             } catch (e) {
               if (e.status === 404) {
-                const { data: main } = await github.rest.repos.getBranch({
+                ({ data: release } = await github.rest.repos.createRelease({
                   ...context.repo,
-                  branch: 'main',
-                });
-                await github.rest.git.createRef({
-                  ...context.repo,
-                  ref: `refs/heads/${branch}`,
-                  sha: main.commit.sha,
-                });
+                  tag_name: 'pr-previews',
+                  target_commitish: 'main',
+                  name: 'PR Preview Images',
+                  body: 'Automated release used as an image store for PR preview screenshots. Do not delete.',
+                  prerelease: true,
+                }));
               } else throw e;
             }
 
-            // Get existing file SHA if present (required by the update API)
-            let existingSha;
-            try {
-              const { data } = await github.rest.repos.getContent({
+            // Replace the existing asset for this PR if present
+            const existingAsset = release.assets.find(a => a.name === assetName);
+            if (existingAsset) {
+              await github.rest.repos.deleteReleaseAsset({
                 ...context.repo,
-                path: filePath,
-                ref: branch,
+                asset_id: existingAsset.id,
               });
-              existingSha = data.sha;
-            } catch (e) {
-              if (e.status !== 404) throw e;
             }
 
-            // Upload (create or overwrite) the screenshot
-            await github.rest.repos.createOrUpdateFileContents({
+            // Upload the new screenshot as a release asset
+            const imageData = fs.readFileSync('preview.png');
+            const { data: asset } = await github.rest.repos.uploadReleaseAsset({
               ...context.repo,
-              path: filePath,
-              message: `chore: preview screenshot for PR #${prNumber} [skip ci]`,
-              content,
-              branch,
-              ...(existingSha && { sha: existingSha }),
+              release_id: release.id,
+              name: assetName,
+              data: imageData,
+              headers: { 'content-type': 'image/png', 'content-length': imageData.length },
             });
 
-            const imageUrl = `https://raw.githubusercontent.com/${context.repo.owner}/${context.repo.repo}/${branch}/${filePath}`;
-            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const imageUrl = asset.browser_download_url;
 
             const body = [
               '## 📸 Landing Page Preview',
@@ -133,22 +130,20 @@ jobs:
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
-            const branch = 'pr-previews';
-            const filePath = `pr-${prNumber}/preview.png`;
+            const assetName = `pr-${prNumber}.png`;
 
             try {
-              const { data } = await github.rest.repos.getContent({
+              const { data: release } = await github.rest.repos.getReleaseByTag({
                 ...context.repo,
-                path: filePath,
-                ref: branch,
+                tag: 'pr-previews',
               });
-              await github.rest.repos.deleteFile({
-                ...context.repo,
-                path: filePath,
-                message: `chore: remove preview for PR #${prNumber} [skip ci]`,
-                sha: data.sha,
-                branch,
-              });
+              const asset = release.assets.find(a => a.name === assetName);
+              if (asset) {
+                await github.rest.repos.deleteReleaseAsset({
+                  ...context.repo,
+                  asset_id: asset.id,
+                });
+              }
             } catch (e) {
-              if (e.status !== 404) core.warning(`Could not remove preview file: ${e.message}`);
+              if (e.status !== 404) core.warning(`Could not remove preview asset: ${e.message}`);
             }
