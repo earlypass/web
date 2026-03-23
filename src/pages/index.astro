@@ -159,34 +159,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 .selfhost .container { max-width: 820px; }
 .selfhost h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 12px; }
 .selfhost p { color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
-.selfhost-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-top: 32px;
-}
-@media (max-width: 640px) {
-  .selfhost-grid { grid-template-columns: 1fr; }
-}
-.selfhost-option {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-}
-.selfhost-option h3 {
-  font-size: 14px; font-weight: 700;
-  margin-bottom: 4px;
-  display: flex; align-items: center; gap: 8px;
-}
-.selfhost-option .tag {
-  font-size: 11px; font-weight: 600;
-  background: var(--primary-light);
-  color: var(--primary);
-  border-radius: 4px;
-  padding: 2px 6px;
-}
-.selfhost-option p { font-size: 13px; color: var(--muted); margin: 6px 0 14px; }
 
 /* ── Developer ──────────────────────────── */
 .developer {
@@ -256,7 +228,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <p>Add referral tracking, a leaderboard, and milestone rewards to your waitlist with a single script tag. No backend changes required.</p>
     <div class="hero-btns">
       <a href="https://api.earlypass.app/dashboard/login" class="btn btn-primary btn-lg">Get started free →</a>
-      <a href="https://github.com/acroca/earlypass" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">View on GitHub</a>
+      <a href="https://github.com/earlypass/earlypass" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">View on GitHub</a>
     </div>
   </section>
 
@@ -274,11 +246,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="demo-label">One script tag</div>
         <h2>Paste once. Done.</h2>
         <p>Drop this into your landing page and EarlyPass handles everything: email collection, referral codes, position tracking, and leaderboard.</p>
-        <div class="code-block"><span class="code-tag">&lt;script</span>
+        <div class="code-block" set:html={`<span class="code-tag">&lt;script</span>
   <span class="code-attr">src</span>=<span class="code-val">"https://api.earlypass.app/widget/widget.js"</span>
   <span class="code-attr">data-campaign</span>=<span class="code-val">"my-product"</span>
   <span class="code-attr">async</span>
-<span class="code-tag">&gt;&lt;/script&gt;</span></div>
+<span class="code-tag">&gt;&lt;/script&gt;</span>`}></div>
         <p style="margin-top:20px;font-size:14px;color:var(--muted);">
           No npm install. No build step. Loads asynchronously so it never blocks your page.
           <a href="/docs/widget">Widget customization →</a>
@@ -330,24 +302,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div class="container">
       <h2>Own your data</h2>
       <p>EarlyPass is open source under the Business Source License. Self-host on your own infrastructure — your waitlist data never touches our servers.</p>
-      <div class="selfhost-grid">
-        <div class="selfhost-option">
-          <h3>Kubernetes <span class="tag">Recommended</span></h3>
-          <p>Production-ready Helm chart with PostgreSQL, Redis, and observability.</p>
-          <div class="code-block" style="font-size:12px;">helm install earlypass \
-  oci://ghcr.io/acroca/charts/earlypass \
+      <div class="code-block" style="font-size:12px;margin-top:24px;">helm install earlypass \
+  oci://ghcr.io/earlypass/charts/earlypass \
   --set secrets.databaseUrl="postgres://..."</div>
-          <a href="/docs/getting-started" style="font-size:13px;margin-top:12px;display:inline-block;">Full setup guide →</a>
-        </div>
-        <div class="selfhost-option">
-          <h3>Docker Compose</h3>
-          <p>Simple VPS deployment. One file, one command.</p>
-          <div class="code-block" style="font-size:12px;">curl -O https://raw.githubusercontent.com/\
-  acroca/earlypass/main/docker-compose.prod.yml
-docker compose -f docker-compose.prod.yml up -d</div>
-          <a href="https://github.com/acroca/earlypass/blob/main/docs/self-hosting.md" target="_blank" rel="noopener" style="font-size:13px;margin-top:12px;display:inline-block;">Self-hosting guide →</a>
-        </div>
-      </div>
+      <a href="/docs/getting-started" style="font-size:13px;margin-top:12px;display:inline-block;">Full setup guide →</a>
     </div>
   </section>
 
@@ -384,7 +342,7 @@ docker compose -f docker-compose.prod.yml up -d</div>
             <span>Claude &amp; Cursor integration</span>
           </span>
         </a>
-        <a href="https://github.com/acroca/earlypass" target="_blank" rel="noopener" class="dev-link">
+        <a href="https://github.com/earlypass/earlypass" target="_blank" rel="noopener" class="dev-link">
           <span class="dev-link-icon">⭐</span>
           <span class="dev-link-text">
             <strong>GitHub</strong>
