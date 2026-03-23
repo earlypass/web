@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, closed]
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 jobs:
@@ -34,116 +34,77 @@ jobs:
           timeout 30 bash -c 'until curl -sf http://localhost:4321 > /dev/null; do sleep 1; done'
           NODE_PATH=/tmp/node_modules node scripts/screenshot.cjs
 
-      - uses: actions/upload-artifact@v4
+      - id: artifact
+        uses: actions/upload-artifact@v4
         with:
           name: landing-page-preview
           path: preview.png
 
-      - name: Publish screenshot and post comment
+      - name: Update PR description with preview link
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
             const prNumber = context.payload.pull_request.number;
             const sha = context.payload.pull_request.head.sha.slice(0, 7);
-            const assetName = `pr-${prNumber}.png`;
+            const artifactUrl = '${{ steps.artifact.outputs.artifact-url }}';
             const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
-            // Find or create the 'pr-previews' release used as an image store
-            let release;
-            try {
-              ({ data: release } = await github.rest.repos.getReleaseByTag({
-                ...context.repo,
-                tag: 'pr-previews',
-              }));
-            } catch (e) {
-              if (e.status === 404) {
-                ({ data: release } = await github.rest.repos.createRelease({
-                  ...context.repo,
-                  tag_name: 'pr-previews',
-                  target_commitish: 'main',
-                  name: 'PR Preview Images',
-                  body: 'Automated release used as an image store for PR preview screenshots. Do not delete.',
-                  prerelease: true,
-                }));
-              } else throw e;
-            }
+            const MARKER_START = '<!-- preview-start -->';
+            const MARKER_END = '<!-- preview-end -->';
 
-            // Replace the existing asset for this PR if present
-            const existingAsset = release.assets.find(a => a.name === assetName);
-            if (existingAsset) {
-              await github.rest.repos.deleteReleaseAsset({
-                ...context.repo,
-                asset_id: existingAsset.id,
-              });
-            }
-
-            // Upload the new screenshot as a release asset
-            const imageData = fs.readFileSync('preview.png');
-            const { data: asset } = await github.rest.repos.uploadReleaseAsset({
-              ...context.repo,
-              release_id: release.id,
-              name: assetName,
-              data: imageData,
-              headers: { 'content-type': 'image/png', 'content-length': imageData.length },
-            });
-
-            const imageUrl = asset.browser_download_url;
-
-            const body = [
+            const previewSection = [
+              MARKER_START,
               '## 📸 Landing Page Preview',
               '',
-              `Built from commit \`${sha}\` — [view run](${runUrl}).`,
-              '',
-              `![Landing page preview](${imageUrl})`,
+              `Built from commit \`${sha}\` — [view run](${runUrl}) · [view screenshot](${artifactUrl}).`,
+              MARKER_END,
             ].join('\n');
 
-            // Create or update the bot comment
-            const { data: comments } = await github.rest.issues.listComments({
+            const { data: pr } = await github.rest.pulls.get({
               ...context.repo,
-              issue_number: prNumber,
+              pull_number: prNumber,
             });
-            const existing = comments.find(
-              c => c.user.type === 'Bot' && c.body.includes('Landing Page Preview')
-            );
 
-            if (existing) {
-              await github.rest.issues.updateComment({
-                ...context.repo,
-                comment_id: existing.id,
-                body,
-              });
+            const currentBody = pr.body || '';
+            const sectionRe = /\n{2}<!-- preview-start -->[\s\S]*?<!-- preview-end -->|<!-- preview-start -->[\s\S]*?<!-- preview-end -->/;
+            let newBody;
+            if (sectionRe.test(currentBody)) {
+              newBody = currentBody.replace(sectionRe, '\n\n' + previewSection);
             } else {
-              await github.rest.issues.createComment({
-                ...context.repo,
-                issue_number: prNumber,
-                body,
-              });
+              newBody = currentBody + (currentBody ? '\n\n' : '') + previewSection;
             }
+
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: prNumber,
+              body: newBody,
+            });
 
   cleanup:
     if: github.event.action == 'closed'
     runs-on: ubuntu-latest
     steps:
-      - name: Remove preview screenshot
+      - name: Remove preview section from PR description
         uses: actions/github-script@v7
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
-            const assetName = `pr-${prNumber}.png`;
+            const MARKER_START = '<!-- preview-start -->';
+            const MARKER_END = '<!-- preview-end -->';
 
-            try {
-              const { data: release } = await github.rest.repos.getReleaseByTag({
-                ...context.repo,
-                tag: 'pr-previews',
-              });
-              const asset = release.assets.find(a => a.name === assetName);
-              if (asset) {
-                await github.rest.repos.deleteReleaseAsset({
-                  ...context.repo,
-                  asset_id: asset.id,
-                });
-              }
-            } catch (e) {
-              if (e.status !== 404) core.warning(`Could not remove preview asset: ${e.message}`);
-            }
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo,
+              pull_number: prNumber,
+            });
+
+            const currentBody = pr.body || '';
+            if (!currentBody.includes(MARKER_START)) return;
+
+            const sectionRe = /\n{2}<!-- preview-start -->[\s\S]*?<!-- preview-end -->|<!-- preview-start -->[\s\S]*?<!-- preview-end -->/;
+            const newBody = currentBody.replace(sectionRe, '').trimEnd();
+
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_number: prNumber,
+              body: newBody,
+            });
