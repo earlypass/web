@@ -180,17 +180,14 @@ a.btn-secondary, a.btn-secondary:link, a.btn-secondary:visited { color: var(--te
 
 /* ── Container ───────────────────────────── */
 .container { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+/* ── Full-height embed (API docs) ────────── */
+.full-height .site-footer { display: none; }
+.full-height .scalar-wrap { height: calc(100vh - 56px); overflow: auto; }
 </style>
-{fullHeight && (
-  <style is:global>
-    body { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-    .site-footer { display: none; }
-    .scalar-wrap { flex: 1; overflow: hidden; }
-  </style>
-)}
 <slot name="head-extra" />
 </head>
-<body>
+<body class={fullHeight ? 'full-height' : ''}>
 
 <header class="site-header">
   <a href="/" class="site-logo">
