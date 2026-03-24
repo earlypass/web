@@ -1,0 +1,165 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+---
+
+<DocsLayout title="Self-Hosting — EarlyPass Docs" activeDoc="self-hosting">
+  <Fragment slot="head-meta">
+    <meta name="description" content="Self-host EarlyPass on your own infrastructure with Docker Compose or Kubernetes. Your waitlist data never touches our servers.">
+    <link rel="canonical" href="https://www.earlypass.app/docs/self-hosting">
+  </Fragment>
+
+  <h1>Self-Hosting</h1>
+  <p class="doc-lead">Run EarlyPass on your own infrastructure. Your waitlist data stays on your servers.</p>
+
+  <div class="callout">
+    <strong>Don't want to self-host?</strong> Use the hosted version at <a href="https://api.earlypass.app/dashboard/login">api.earlypass.app</a> — free to get started, no setup required.
+  </div>
+
+  <h2 id="docker-compose">Docker Compose (recommended)</h2>
+  <p>The fastest way to self-host EarlyPass. You need <a href="https://docs.docker.com/get-docker/">Docker</a> and <a href="https://docs.docker.com/compose/install/">Docker Compose</a> installed.</p>
+
+  <h3>1. Create a <code>docker-compose.yml</code></h3>
+  <pre><code set:html={`version: "3.9"
+
+services:
+  earlypass:
+    image: ghcr.io/earlypass/earlypass:latest
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://earlypass:earlypass@postgres:5432/earlypass?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      BASE_URL: https://earlypass.example.com
+      DASHBOARD_JWT_SECRET: \${DASHBOARD_JWT_SECRET}
+      EMAIL_FROM: noreply@example.com
+      RESEND_API_KEY: \${RESEND_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: earlypass
+      POSTGRES_PASSWORD: earlypass
+      POSTGRES_DB: earlypass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U earlypass"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:`}></code></pre>
+
+  <h3>2. Generate a JWT secret</h3>
+  <pre><code>export DASHBOARD_JWT_SECRET=$(openssl rand -hex 32)</code></pre>
+  <p>Without this, dashboard sessions won't survive container restarts.</p>
+
+  <h3>3. Start the stack</h3>
+  <pre><code>docker compose up -d</code></pre>
+  <p>Database migrations run automatically on startup. After a few seconds, your instance is ready:</p>
+  <pre><code set:html={`curl http://localhost:3000/healthz
+# → {"status":"ok","components":{"database":"ok","redis":"ok"}}`}></code></pre>
+
+  <h3>4. Access the dashboard</h3>
+  <p>Open <code>http://localhost:3000/dashboard/login</code> in your browser. Create an account with a magic link (requires email configuration — see below).</p>
+
+  <h3>Updating</h3>
+  <pre><code set:html={`docker compose pull
+docker compose up -d`}></code></pre>
+
+  <h2 id="docker-run">Single container</h2>
+  <p>If you already have PostgreSQL and Redis running, you can run EarlyPass as a single container:</p>
+  <pre><code set:html={`docker run -d \\
+  -p 3000:3000 \\
+  -e DATABASE_URL="postgres://user:pass@host:5432/earlypass" \\
+  -e REDIS_URL="redis://host:6379" \\
+  -e DASHBOARD_JWT_SECRET="$(openssl rand -hex 32)" \\
+  -e BASE_URL="https://earlypass.example.com" \\
+  ghcr.io/earlypass/earlypass:latest`}></code></pre>
+
+  <h2 id="kubernetes">Kubernetes (Helm)</h2>
+  <p>For teams already running Kubernetes, EarlyPass provides an OCI Helm chart.</p>
+
+  <h3>Install</h3>
+  <pre><code set:html={`helm install earlypass \\
+  oci://ghcr.io/earlypass/charts/earlypass \\
+  --set secrets.databaseUrl="postgres://user:pass@host:5432/earlypass" \\
+  --set secrets.dashboardJwtSecret="$(openssl rand -hex 32)"`}></code></pre>
+  <p>This assumes you bring your own PostgreSQL and Redis. The chart does not deploy databases.</p>
+
+  <h3>Key values</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>secrets.databaseUrl</code></td><td>PostgreSQL connection string (required)</td></tr>
+      <tr><td><code>secrets.dashboardJwtSecret</code></td><td>HMAC key for dashboard auth (required)</td></tr>
+      <tr><td><code>secrets.redisUrl</code></td><td>Redis connection string</td></tr>
+      <tr><td><code>secrets.resendApiKey</code></td><td>Resend API key for transactional email</td></tr>
+      <tr><td><code>config.baseUrl</code></td><td>Public URL of your instance</td></tr>
+      <tr><td><code>config.emailFrom</code></td><td>From address for emails</td></tr>
+      <tr><td><code>ingress.enabled</code></td><td>Enable Ingress resource (default: false)</td></tr>
+      <tr><td><code>autoscaling.enabled</code></td><td>Enable HPA (default: false, 2-10 replicas)</td></tr>
+    </tbody>
+  </table>
+  <p>See the full <a href="https://github.com/earlypass/earlypass/tree/main/helm/earlypass">chart source</a> for all available values.</p>
+
+  <h2 id="configuration">Configuration</h2>
+  <p>All configuration is via environment variables. The same variables work for both Docker and Kubernetes deployments.</p>
+  <table>
+    <thead>
+      <tr><th>Variable</th><th>Required</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>DATABASE_URL</code></td><td>yes</td><td>PostgreSQL connection string</td></tr>
+      <tr><td><code>REDIS_URL</code></td><td>yes</td><td>Redis connection string</td></tr>
+      <tr><td><code>BASE_URL</code></td><td>recommended</td><td>Public URL of your instance (e.g. <code>https://earlypass.example.com</code>). Used to build links in emails. No trailing slash.</td></tr>
+      <tr><td><code>DASHBOARD_JWT_SECRET</code></td><td>recommended</td><td>HMAC-SHA256 key for dashboard auth cookies. Generate with <code>openssl rand -hex 32</code>. If unset, a random key is generated per process — sessions won't survive restarts.</td></tr>
+      <tr><td><code>EMAIL_FROM</code></td><td>no</td><td>From address for transactional emails</td></tr>
+      <tr><td><code>RESEND_API_KEY</code></td><td>no</td><td>Resend API key. Leave empty to disable email (magic links will be logged to stdout instead).</td></tr>
+      <tr><td><code>TRUSTED_PROXIES</code></td><td>no</td><td>Comma-separated CIDR ranges trusted to set <code>X-Forwarded-For</code> (e.g. <code>10.0.0.0/8</code>)</td></tr>
+      <tr><td><code>PORT</code></td><td>no</td><td>HTTP port (default: <code>3000</code>)</td></tr>
+      <tr><td><code>OTEL_EXPORTER_OTLP_ENDPOINT</code></td><td>no</td><td>OTLP collector endpoint for OpenTelemetry traces</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="reverse-proxy">Reverse proxy</h2>
+  <p>In production, place EarlyPass behind a reverse proxy (Caddy, nginx, Traefik) that handles TLS. Point the proxy at <code>localhost:3000</code> and set <code>BASE_URL</code> to your public domain. Set <code>TRUSTED_PROXIES</code> to your proxy's IP range so rate limiting uses the real client IP.</p>
+
+  <h2 id="health-check">Health check</h2>
+  <pre><code set:html={`GET /healthz → {"status":"ok","components":{"database":"ok","redis":"ok"}}`}></code></pre>
+  <p>Use this for load balancer health checks, Docker <code>HEALTHCHECK</code>, or Kubernetes liveness/readiness probes.</p>
+
+  <h2 id="data">Data &amp; backups</h2>
+  <p>All persistent state is in PostgreSQL. Redis is used only for rate limiting and idempotency keys — it can be flushed without data loss. Back up your PostgreSQL database regularly:</p>
+  <pre><code>docker compose exec postgres pg_dump -U earlypass earlypass > backup.sql</code></pre>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><a href="/docs/getting-started">Getting Started</a> — create a campaign and embed the widget</li>
+    <li><a href="/docs/widget">Widget Reference</a> — point the widget at your self-hosted instance</li>
+    <li><a href="/docs/api">API Reference</a> — full REST API documentation</li>
+    <li><a href="/docs/mcp">MCP Server</a> — AI agent integration</li>
+  </ul>
+</DocsLayout>

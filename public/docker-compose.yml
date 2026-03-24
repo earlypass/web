@@ -1,0 +1,58 @@
+# EarlyPass — self-hosted Docker Compose stack
+# Docs: https://www.earlypass.app/docs/self-hosting
+#
+# Quick start:
+#   export DASHBOARD_JWT_SECRET=$(openssl rand -hex 32)
+#   docker compose up -d
+#
+# Dashboard: http://localhost:3000/dashboard/login
+# Health:    http://localhost:3000/healthz
+
+services:
+  earlypass:
+    image: ghcr.io/earlypass/earlypass:latest
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://earlypass:earlypass@postgres:5432/earlypass?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      BASE_URL: ${BASE_URL:-http://localhost:3000}
+      DASHBOARD_JWT_SECRET: ${DASHBOARD_JWT_SECRET:?Set DASHBOARD_JWT_SECRET — run: export DASHBOARD_JWT_SECRET=$(openssl rand -hex 32)}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: earlypass
+      POSTGRES_PASSWORD: earlypass
+      POSTGRES_DB: earlypass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U earlypass"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:

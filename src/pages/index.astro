@@ -223,7 +223,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   </Fragment>
 
   <section class="hero">
-    <span class="hero-badge">Open Source · BSL License · Self-Hostable</span>
+    <span class="hero-badge">Open Source · Self-Hostable</span>
     <h1>Drop-in viral waitlist<br>for your <span>next launch</span></h1>
     <p>Add referral tracking, a leaderboard, and milestone rewards to your waitlist with a single script tag. No backend changes required.</p>
     <div class="hero-btns">
@@ -292,7 +292,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <div class="feature">
           <div class="feature-icon">🔒</div>
           <h3>Open source &amp; self-hostable</h3>
-          <p>BSL licensed — free to self-host forever. Deploy to Kubernetes with our Helm chart or to any VPS with Docker Compose.</p>
+          <p>Free to self-host. Deploy to any VPS with Docker Compose or to Kubernetes with our Helm chart.</p>
         </div>
       </div>
     </div>
@@ -301,11 +301,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <section class="selfhost">
     <div class="container">
       <h2>Own your data</h2>
-      <p>EarlyPass is open source under the Business Source License. Self-host on your own infrastructure — your waitlist data never touches our servers.</p>
-      <div class="code-block" style="font-size:12px;margin-top:24px;">helm install earlypass \
-  oci://ghcr.io/earlypass/charts/earlypass \
-  --set secrets.databaseUrl="postgres://..."</div>
-      <a href="/docs/getting-started" style="font-size:13px;margin-top:12px;display:inline-block;">Full setup guide →</a>
+      <p>EarlyPass is open source and free to self-host. Your waitlist data never touches our servers.</p>
+      <div class="code-block" style="font-size:12px;margin-top:24px;">docker run -d -p 3000:3000 \
+  -e DATABASE_URL="postgres://..." \
+  -e REDIS_URL="redis://..." \
+  ghcr.io/earlypass/earlypass:latest</div>
+      <a href="/docs/self-hosting" style="font-size:13px;margin-top:12px;display:inline-block;">Full setup guide →</a>
     </div>
   </section>
 

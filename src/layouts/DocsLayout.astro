@@ -14,6 +14,7 @@ const { title, activeDoc } = Astro.props;
     <nav class="docs-sidebar" aria-label="Docs navigation">
       <div class="docs-sidebar-title">Documentation</div>
       <a href="/docs/getting-started" class={activeDoc === 'getting-started' ? 'active' : ''}>Getting Started</a>
+      <a href="/docs/self-hosting" class={activeDoc === 'self-hosting' ? 'active' : ''}>Self-Hosting</a>
       <a href="/docs/widget" class={activeDoc === 'widget' ? 'active' : ''}>Widget Reference</a>
       <a href="/docs/mcp" class={activeDoc === 'mcp' ? 'active' : ''}>MCP Server</a>
       <a href="/docs/api" class={activeDoc === 'api' ? 'active' : ''}>API Reference</a>
