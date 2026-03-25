@@ -58,6 +58,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   line-height: 1.65;
 }
 .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-widget-wrap {
+  max-width: 420px;
+  margin: 0 auto;
+  text-align: center;
+}
 
 /* ── Demo section ───────────────────────── */
 .demo-section {
@@ -226,26 +231,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <span class="hero-badge">Open Source · Self-Hostable</span>
     <h1>Drop-in viral waitlist<br>for your <span>next launch</span></h1>
     <p>Add referral tracking, a leaderboard, and milestone rewards to your waitlist with a single script tag. No backend changes required.</p>
-    <div class="hero-btns">
-      <a href="https://api.earlypass.app/dashboard/login" class="btn btn-primary btn-lg">Get started free →</a>
+    <div class="hero-widget-wrap">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">Join the waitlist for hosted EarlyPass — or <a href="https://github.com/earlypass/earlypass">self-host it now</a></p>
+      <script src="https://api.earlypass.app/widget/widget.js" data-campaign="flmifau4nx"></script>
+    </div>
+    <div class="hero-btns" style="margin-top:24px;">
       <a href="https://github.com/earlypass/earlypass" target="_blank" rel="noopener" class="btn btn-secondary btn-lg">View on GitHub</a>
+      <a href="/docs/getting-started" class="btn btn-secondary btn-lg">Read the docs</a>
     </div>
   </section>
 
   <section class="demo-section">
     <div class="demo-inner">
       <div>
-        <div class="demo-label">Live demo</div>
-        <h2>See it in action</h2>
-        <p>This is a real EarlyPass widget connected to a live campaign. Sign up to see your referral link and position on the leaderboard.</p>
-        <div class="demo-widget-wrap">
-          <script src="https://api.earlypass.app/widget/widget.js" data-campaign="flmifau4nx"></script>
-        </div>
-      </div>
-      <div>
         <div class="demo-label">One script tag</div>
         <h2>Paste once. Done.</h2>
-        <p>Drop this into your landing page and EarlyPass handles everything: email collection, referral codes, position tracking, and leaderboard.</p>
+        <p>The widget above? It's a single script tag. Drop it into your landing page and EarlyPass handles everything: email collection, referral codes, position tracking, and leaderboard.</p>
         <div class="code-block" set:html={`<span class="code-tag">&lt;script</span>
   <span class="code-attr">src</span>=<span class="code-val">"https://api.earlypass.app/widget/widget.js"</span>
   <span class="code-attr">data-campaign</span>=<span class="code-val">"my-product"</span>
@@ -255,6 +256,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           No npm install. No build step. Loads asynchronously so it never blocks your page.
           <a href="/docs/widget">Widget customization →</a>
         </p>
+      </div>
+      <div>
+        <div class="demo-label">What you get</div>
+        <h2>Not just a form</h2>
+        <p>EarlyPass gives each signup a unique referral link, tracks their position, and builds a live leaderboard — all from that one embed. Refer friends to move up the queue.</p>
+        <div style="font-size:14px;color:var(--muted);line-height:2;">
+          <div>&#10003; Referral tracking with unique codes</div>
+          <div>&#10003; Queue position based on referrals</div>
+          <div>&#10003; Real-time leaderboard</div>
+          <div>&#10003; Email verification</div>
+          <div>&#10003; Invite top users with one click</div>
+          <div>&#10003; Full REST API + MCP for AI tools</div>
+        </div>
       </div>
     </div>
   </section>
@@ -357,10 +371,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <section class="cta-banner">
     <div class="container">
       <h2>Ready to launch?</h2>
-      <p>Set up your waitlist in minutes. No credit card required.</p>
+      <p>Self-host for free today, or join the waitlist for the hosted version.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-        <a href="https://api.earlypass.app/dashboard/login" class="btn btn-primary btn-lg">Get started free</a>
-        <a href="/docs/getting-started" class="btn btn-secondary btn-lg">Read the docs</a>
+        <a href="/docs/self-hosting" class="btn btn-primary btn-lg">Self-host now</a>
+        <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" class="btn btn-secondary btn-lg">Join the waitlist</a>
       </div>
     </div>
   </section>
