@@ -73,7 +73,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   align-items: start;
 }
 @media (max-width: 768px) {
-  .demo-inner { grid-template-columns: 1fr; }
+  .demo-inner { grid-template-columns: minmax(0, 1fr); }
 }
 .demo-label {
   font-size: 13px;

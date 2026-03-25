@@ -105,6 +105,11 @@ a.btn-secondary, a.btn-secondary:link, a.btn-secondary:visited { color: var(--te
 }
 .site-nav a:not(.btn):hover { color: var(--text); background: var(--bg); }
 .site-nav .nav-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+@media (max-width: 600px) {
+  .site-header { padding: 0 16px; }
+  .site-nav a:not(.btn) { display: none; }
+  .site-nav .nav-divider { display: none; }
+}
 
 /* ── Footer ─────────────────────────────── */
 .site-footer {
